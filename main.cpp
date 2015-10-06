@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
      mpf_set_str(help, str, 10);
      
      //sprawdzam czy liczby są sobie równe, jeśli tak to kończę while
-     if(mpf_cmp(num, help)) {
+     if(mpf_cmp(num, help) == 0) {
          break;
      }
     }
