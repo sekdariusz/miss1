@@ -13,123 +13,134 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-
-    FILE * file;
-
+    
+    int d = strtol(argv[1], NULL, 10);
+    //printf("Żądana dokładność: %d\n", d);
+    
     //aktualna liczba
-    mpf_t num; 
+    mpz_t num; 
     
     //suma wszystkich liczb
-    mpf_t sum;  
+    mpz_t sum;  
     
     //ilość wszystkich liczb
-    mpf_t amount;
+    mpz_t amount;
     
-    //srednia
-    mpf_t avg;
+    //wynik dzielenia
+    mpz_t q;
     
-    //wariancja
-    mpf_t var;
+    //reszta z dzielenia
+    mpz_t r;
+    
+    //10
+    mpz_t base;
+    
+    //do zad 2
+    //suma kwadratów
+    mpz_t pow_sum;
+    
+    //wynik odejmowania
+    mpz_t sub;
     
     //pomocnicza do 3 zad
-    mpf_t help;
+    mpz_t help;
     
-    //liczik do 3 zad
-    mpf_t counter;
+    //licznik do 3 zad
+    mpz_t counter;
     
     //inicjacja
-    mpf_inits(num, sum, amount, avg, var, help, counter);
-    
-    //zad 1
-    file = fopen("test1", "r");
-    if (file == NULL) {
-        printf("File is null");
-        mpf_clears (amount, sum, num, avg);
-        exit(EXIT_FAILURE);
-    }
-                      
-    char str[1024];
-    while (!feof (file))
+    mpz_inits(num, sum, amount, q, r, base, sub, pow_sum, help, counter);
+                  
+    char str;
+    while(scanf("%s", &str) == 1)
     {  
-      //pobieram kolejna liczbę z pliku
-      fscanf (file, "%s", str);
+      mpz_set_str(num, &str, 10);
+      mpz_add(sum, sum, num);
       
-      //zamieniam na tym gmp
-      mpf_set_str(num, str, 10);
+      mpz_pow_ui(num, num, 2);
+      mpz_add(pow_sum, pow_sum, num);
       
-      //dodaje liczbe do sumy
-      mpf_add(sum, sum, num);
-      
-      //zwiększam licznik liczb o 1
-      mpf_add_ui(amount, amount, 1);
+      mpz_add_ui(amount, amount, 1);
     }
+        
+    char *result = (char *) malloc(1024);
+    char *pom = (char *) malloc(1024);
     
-    //dzielenie: suma_liczb/ilość_liczb = wartość średnia
-    mpf_div(avg, sum, amount);
+    //przed kropką]
+    mpz_fdiv_qr (q, r, sum, amount);
+    mpz_get_str(result, 10, q);
     
-    //wyświetlanie
-    gmp_printf ("Ilosc liczb %.Ff\n", amount, 50);
-    gmp_printf ("Suma liczb %.Ff\n", sum, 50);
-    gmp_printf ("Wartosc srednia  %.Ff\n", avg, 50);
+    //po kropce
+    mpz_set_ui(base, 10);
+    
+    mpz_pow_ui(base, base, d);
+    mpz_mul(r, r, base);
+    mpz_fdiv_qr (q, r, r, amount); 
+    mpz_get_str(pom, 10, q);
+    
+    char *avg = (char *) malloc(2 + strlen(result)+ strlen(pom) );
+    strcpy(avg, result);
+    strcat(avg, ".");
+    strcat(avg, pom);
+
+    printf("Srednia: %s\n", avg);
     
     //zad 2
+       
+    mpz_mul(pow_sum, pow_sum, amount);
+    mpz_pow_ui(sum, sum, 2);
+    mpz_pow_ui(amount, amount, 2);
     
-    //średnia wyliczona wcześniej do kwadratu
-    mpf_pow_ui(avg, avg, 2);
+    //przed kropką
+    mpz_sub(sub, pow_sum, sum);
+    mpz_fdiv_qr (q, r, sub, amount);
+    mpz_get_str(result, 10, q);
     
-    //przewijam plik do początku
-    rewind(file);
-    while (!feof (file))
-    {  
-      //pobieram kolejna liczbę z pliku
-      fscanf (file, "%s", str);
-      
-      //zamieniam na typ gmp
-      mpf_set_str(num, str, 10);
-      
-      //podnoszę liczbę do drugiej potęgi
-      mpf_pow_ui(num, num, 2);
-      
-      //odejmuję od kwadratu obecnej liczby kwadrat średniej
-      mpf_sub(num, num, avg);
-      
-      //dodaję poprzedni wynik do sumy
-      mpf_add(var, var, num);
-    }
+    mpz_mul(r, r, base);
+    mpz_fdiv_qr (q, r, r, amount); 
+    mpz_get_str(pom, 10, q);
     
-    //dzielenie: suma/ilość_liczb
-    mpf_div(var, var, amount);
-    gmp_printf ("Wariancja  %.Ff\n", var, 50);
+    char *var = (char *) malloc(2 + strlen(result)+ strlen(pom) );
+    strcpy(var, result);
+    strcat(var, ".");
+    strcat(var, pom);
 
+    printf("Wariancja: %s\n", var);
+    
+    
+    /*
     //zad 3
     rewind(file);
 
     fscanf (file, "%s", str);
-    mpf_set_str(num, str, 10);
+    mpz_set_str(num, str, 10);
     
     while(!feof (file))
     {
      //zwiększam licznik o 1
-     mpf_add_ui(counter, counter, 1);
+     mpz_add_ui(counter, counter, 1);
 
      //pobieram kolejną liczbę z pliku
      fscanf (file, "%s", str);
      
      //zamieniam na typ gmp
-     mpf_set_str(help, str, 10);
+     mpz_set_str(help, str, 10);
      
      //sprawdzam czy liczby są sobie równe, jeśli tak to kończę while
-     if(mpf_cmp(num, help) == 0) {
+     if(mpz_cmp(num, help) == 0) {
          break;
      }
     }
     
     fclose (file);    
     
-    gmp_printf ("Okres  %.Ff\n", counter, 50);
+    gmp_printf ("Okres  %.Ff\n", counter, d);
     
-    //mpf_clears (amount, sum, num, avg);
+    */
+    //mpz_clears (num, sum, amount, q, r, var, help, counter);
     
     exit(EXIT_SUCCESS); 
-}
+} 
+
+
 
